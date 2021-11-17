@@ -5,7 +5,10 @@ from selenium.webdriver.chrome.options import Options
 import time
 import re
 from selenium.webdriver.common.keys import Keys
-
+import telegram
+import datetime
+import os
+from dotenv import load_dotenv
 
 ####################################################
 
@@ -21,6 +24,19 @@ option.add_experimental_option("prefs", {
     "profile.default_content_setting_values.media_stream_mic": 1,     # 1:allow, 2:block 
     "profile.default_content_setting_values.media_stream_camera": 1,  # 1:allow, 2:block 
 })
+
+load_dotenv()
+sToken = os.getenv('TELEGRAM_TOKEN')
+print(sToken)
+
+bot = telegram.Bot(token=sToken)
+
+updates = bot.get_updates()
+chatId = updates[0].message.from_user.id
+
+def getDate():
+    dateTime = datetime.datetime.now()
+    return dateTime.strftime("%H:%M:%S - %d/%m/%Y")
 
 class Meetbot:
 
@@ -109,6 +125,9 @@ class Meetbot:
                 "/html/body/div[1]/c-wiz/div[1]/div/div[9]/div[3]/div[10]/div[3]/div[2]/div/div/div[2]/div/div").text)
         
         quitPeopleQuant = int(startPeopleQuant/2)
+        
+        textoChat = "Entrando na reunião às " + getDate()+"\nCom "+str(startPeopleQuant)+" pessoas\nSairei quando houverem "+str(quitPeopleQuant)+" pessoas."
+        bot.send_message(text=textoChat, chat_id=chatId)
 
         while True:
 
@@ -126,13 +145,16 @@ class Meetbot:
                     # search for needle with regex
                     quantPresentes = len([m.start() for m in re.finditer(r'{}'.format(re.escape(needle)), chat)])
                         
-                    # if there's at least 2 needles, sends message                    
-                    if (quantPresentes > 2 and hasSend == False):
+                    # if there's at least 3 needles, sends message                    
+                    if (quantPresentes > 3 and hasSend == False):
                         chatBox = self.driver.find_element_by_name("chatTextInput")
                         chatBox.send_keys("presente")
                         time.sleep(1)
                         hasSend = True
                         chatBox.send_keys(Keys.RETURN)
+                        
+                        textoChat = "Marquei presença às " + getDate()+"."
+                        bot.send_message(text=textoChat, chat_id=chatId)
                         
                     # if has sent the message, lookup for the number of people
                     if (hasSend == True):
@@ -142,14 +164,17 @@ class Meetbot:
                         # if reached the number of people needed to exit, exits
                         if (peopleQuant <= quitPeopleQuant):
                             self.driver.close()
+                            textoChat = "Saí da reunião às " + getDate()+"."
+                            bot.send_message(text=textoChat, chat_id=chatId)
                             return
                     
                     time.sleep(5)
                     
                 except:
                     print("erro!")
-                    pass
-
+                    textoChat = "Erro às " + getDate()+"."
+                    bot.send_message(text=textoChat, chat_id=chatId)
+                    return
 
         time.sleep(1)
 
@@ -159,7 +184,6 @@ class Meetbot:
 ##################################################################################
 
 # main
-
 
 if __name__ == "__main__":
            
