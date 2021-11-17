@@ -7,7 +7,7 @@ import re
 from selenium.webdriver.common.keys import Keys
 import telegram
 import datetime
-import os
+import os, sys
 from dotenv import load_dotenv
 
 ####################################################
@@ -25,9 +25,19 @@ option.add_experimental_option("prefs", {
     "profile.default_content_setting_values.media_stream_camera": 1,  # 1:allow, 2:block 
 })
 
+# Load the .env file
 load_dotenv()
+
+# Get the token from the .env file
 sToken = os.getenv('TELEGRAM_TOKEN')
-print(sToken)
+
+# Get the username and password from the .env file
+username = os.getenv('EMAIL')
+password = os.getenv('SENHA')
+
+# Get first parameter from the command lin
+if len(sys.argv) > 1:
+    meetlink = sys.argv[1]
 
 bot = telegram.Bot(token=sToken)
 
@@ -187,11 +197,17 @@ class Meetbot:
 
 if __name__ == "__main__":
            
-    username = input("Insira seu E-mail : ")
+    # Check if env variable username is set
+    if username is None:
+        username = input("Insira seu E-mail : ")
     
-    password = input("Insira sua senha: ")
+    # Check if env variable password is set
+    if password is None:
+        password = input("Insira sua senha: ")
     
-    meetlink = input("Insira o link da reunião do Google Meet: ")
+    # Check if env variable meetlink is set
+    if meetlink is None:
+        meetlink = input("Insira o link da reunião do Google Meet: ")
     
     meet_bot = Meetbot(username, password, meetlink)
 
